@@ -1,34 +1,42 @@
-name: Build Flutter APK
+name: Build and Release APK
 
 on:
   workflow_dispatch: # 允许在网页上手动点击按钮触发打包
 
+permissions:
+  contents: write # 授予云端机器人自动创建 Releases 并上传 APK 的权限
+
+defaults:
+  run:
+    working-directory: ./app # 核心修正：直接进入 app 子文件夹里执行所有打包命令！
+
 jobs:
   build:
-    runs-on: ubuntu-latest # 借用一台免费的最新版 Linux 云服务器
+    runs-on: ubuntu-latest # 借用免费最新版 Linux 云端电脑
     steps:
-      - name: 拉取仓库源码
+      - name: 1. 拉取仓库源码
         uses: actions/checkout@v4
 
-      - name: 安装 Java 环境
+      - name: 2. 安装 Java 17 环境
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 安装 Flutter 打包工具
+      - name: 3. 安装 Flutter 打包工具
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: 下载项目依赖包
+      - name: 4. 下载项目依赖包
         run: flutter pub get
 
-      - name: 开始编译安卓 APK 安装包
+      - name: 5. 编译生成正式版 APK
         run: flutter build apk --release
 
-      - name: 把打包好的 APK 放到下载区
-        uses: actions/upload-artifact@v4
+      - name: 6. 自动上架到永久 Releases 货架（防 90 天过期）
+        uses: softprops/action-gh-release@v2
         with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          tag_name: v1.0.${{ github.run_number }} # 自动生成递增版本号
+          name: 云端自动打包版 v1.0.${{ github.run_number }}
+          files: app/build/app/outputs/flutter-apk/app-release.apk # 抓取 app 子目录下的成品包
