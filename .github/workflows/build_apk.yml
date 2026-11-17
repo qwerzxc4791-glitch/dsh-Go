@@ -1,18 +1,18 @@
 name: Build and Release APK
 
 on:
-  workflow_dispatch: # 允许在网页上手动点击按钮触发打包
+  workflow_dispatch:
 
 permissions:
-  contents: write # 授予云端机器人自动创建 Releases 并上传 APK 的权限
+  contents: write
 
 defaults:
   run:
-    working-directory: ./app # 核心修正：直接进入 app 子文件夹里执行所有打包命令！
+    working-directory: ./app
 
 jobs:
   build:
-    runs-on: ubuntu-latest # 借用免费最新版 Linux 云端电脑
+    runs-on: ubuntu-latest
     steps:
       - name: 1. 拉取仓库源码
         uses: actions/checkout@v4
@@ -31,12 +31,12 @@ jobs:
       - name: 4. 下载项目依赖包
         run: flutter pub get
 
-      - name: 5. 编译生成正式版 APK
-        run: flutter build apk --release
+      - name: 5. 编译生成免签名 APK
+        run: flutter build apk --debug # 改成 debug 版，彻底绕开签名密钥报错
 
-      - name: 6. 自动上架到永久 Releases 货架（防 90 天过期）
+      - name: 6. 自动上架到永久 Releases 货架
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }} # 自动生成递增版本号
+          tag_name: v1.0.${{ github.run_number }}
           name: 云端自动打包版 v1.0.${{ github.run_number }}
-          files: app/build/app/outputs/flutter-apk/app-release.apk # 抓取 app 子目录下的成品包
+          files: app/build/app/outputs/flutter-apk/app-debug.apk # 抓取生成的 debug 安装包
